@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>My first three.js app</title>
+    <style>
+        body {
+            margin: 0;
+        }
+        
+        canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        #map {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            width: 300px;
+            height: 300px;
+        }
+    </style>
+</head>
+
+<body>
+    <script src="js/three.js"></script>
+    <script src="Full-Tilt/dist/fulltilt.js"></script>
+    <script>
+
+        // Thanks to https://en.wikipedia.org/wiki/Geographic_coordinate_system#Expressing_latitude_and_longitude_as_linear_units
+        function latitudeDifferenceMeters(referenceLat, measurementLat)
+        {
+            var metersPerLatDegree = 111132.92 - 559.82 * Math.cos(2 * referenceLat) + 1.175 * Math.cos(4 * referenceLat) - 0.0023 * Math.cos(6 * referenceLat);
+            var degreeDifference = measurementLat - referenceLat;
+            return degreeDifference * metersPerLatDegree;
+        }
+        function longitudeDifferenceMeters(referenceLat, longA, longB)
+        {
+            var metersPerLongDegree = 111412.84 * Math.cos(referenceLat) - 93.5 * Math.cos(3 * referenceLat) + 0.118 * Math.cos(5 * referenceLat);
+            var degreeDifference = longB - longA;
+            return degreeDifference * metersPerLongDegree;
+        }
+
+        // CREATE THREE.JS SCENE
+        var scene = new THREE.Scene();
+        var camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(0, 1.7, 0);
+        var renderer = new THREE.WebGLRenderer();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(renderer.domElement);
+
+        // CREATE MONUMENT
+        var monument = new THREE.Group();
+        scene.add(monument);
+        var geometry = new THREE.BoxGeometry(1, 1, 1);
+        var greenMaterial = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
+        var redMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+        var ringRadius = 5;
+        var numCubes = 30;
+        for (var i = 0; i < numCubes; i++)
+        {
+            var cube = new THREE.Mesh(geometry, greenMaterial);
+            if (i == 0)
+            {
+                cube.material = redMaterial;
+            }
+            cube.position.set(
+                    ringRadius * Math.cos((i / numCubes) * 2 * Math.PI),
+                    0,
+                    ringRadius * Math.sin((i / numCubes) * 2 * Math.PI));
+            monument.add(cube);
+        }
+        var monumentLat = 37.752486;
+        var monumentLon = -122.413657;
+
+        // GET DEVICE ORIENTATION
+        var promise = new FULLTILT.getDeviceOrientation({ 'type': 'world' });
+        var deviceOrientation;
+        promise
+            .then(function(controller) {
+                deviceOrientation = controller;
+            })
+            .catch(function(message) {
+                console.error(message);
+            });
+        // Computed device orientation rotation vector
+        var orientationQuat = new THREE.Quaternion();
+        // World frame transform (- PI/2 around the x-axis)
+        var worldQuat = new THREE.Quaternion( - Math.sqrt( 0.5 ), 0, 0, Math.sqrt( 0.5 ) );
+
+        // GET DEVICE POSITION
+        var deviceLat = 0;
+        var deviceLon = 0;
+        function geo_success(position) {
+            deviceLat = +position.coords.latitude;
+            deviceLon = +position.coords.longitude
+
+            var map = document.getElementById("map");
+            while (map.firstChild) {
+                map.removeChild(map.firstChild);
+            }
+            var img = new Image();
+            var api_key = "AIzaSyCadLo8pPkhDABBMIM6dJjySG3QX9BYClE";
+            img.src = "https://maps.googleapis.com/maps/api/staticmap?center=" + deviceLat + "," + deviceLon + "&zoom=19&size=300x300&sensor=false&markers=size:tiny%7Ccolor:red%7C"+deviceLat+","+deviceLon+"&markers=size:tiny%7Ccolor:blue%7C"+monumentLat+","+monumentLon+"&key=" + api_key;
+            map.appendChild(img);
+        }
+        function geo_error() {
+            console.log("Sorry, no position available.");
+            // GPS not available, so hardcode the coords of the Grand Theater!
+            deviceLat = 37.7545505;
+            deviceLon = -122.4184645;
+        }
+        var geo_options = {
+            enableHighAccuracy: true,
+            maximumAge        : 30000,
+            timeout           : 27000
+        };
+        var wpid = navigator.geolocation.watchPosition(geo_success, geo_error, geo_options);
+
+        // RUN RENDER LOOP
+        var render = function () {
+            requestAnimationFrame(render);
+
+            // If we have a valid FULLTILT.DeviceOrientation object then use it
+            if (deviceOrientation) {
+                var quat = deviceOrientation.getScreenAdjustedQuaternion();
+                orientationQuat.set( quat.x, quat.y, quat.z, quat.w );
+                // IMPORTANT! set deviceorientation camera to three.js world frame
+                // (i.e. make camera look out the back of the screen by rotating the camera x-axis by -PI/2)
+                camera.quaternion.multiplyQuaternions( worldQuat, orientationQuat );
+            }
+
+            var zPos = latitudeDifferenceMeters(deviceLat, monumentLat);
+            var xPos = longitudeDifferenceMeters(deviceLat, deviceLon, monumentLon);
+            monument.position.set(xPos, 0, -zPos);
+
+            renderer.render(scene, camera);
+        };
+
+        render();
+    </script>
+    <div id="map"></div>
+</body>
+
+</html>
