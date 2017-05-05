@@ -21,15 +21,39 @@
             width: 300px;
             height: 300px;
         }
+
+        .parent {
+            width: 100%;
+            height: 100%;
+        }
+        #monitor, #mainCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+        #videoElement {
+            width: 100%;
+            height: 100%;
+        }
     </style>
 </head>
 
 <body>
+    <div class="parent">
+        <div id="monitor">
+            <video autoplay="true" id="videoElement"></video>
+        </div>
+        <div id="mainCanvas"></div>
+        <div id="map"></div>
+    </div>
+
     <script src="js/three.js"></script>
     <script src="js/fulltilt.js"></script>
     <script>
 
-        // Thanks to https://en.wikipedia.org/wiki/Geographic_coordinate_system#Expressing_latitude_and_longitude_as_linear_units
+        // Thanks https://en.wikipedia.org/wiki/Geographic_coordinate_system#Expressing_latitude_and_longitude_as_linear_units
         function latitudeDifferenceMeters(referenceLat, measurementLat)
         {
             var metersPerLatDegree = 111132.92 - 559.82 * Math.cos(2 * referenceLat) + 1.175 * Math.cos(4 * referenceLat) - 0.0023 * Math.cos(6 * referenceLat);
@@ -47,9 +71,17 @@
         var scene = new THREE.Scene();
         var camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
         camera.position.set(0, 1.7, 0);
-        var renderer = new THREE.WebGLRenderer();
+        
+        // var helper = new THREE.CameraHelper( camera );
+        // scene.add( helper );
+        // var camera2 = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        // camera2.position.set(0, 0, 0);
+
+        var renderer = new THREE.WebGLRenderer({ alpha: true });
+        renderer.setClearAlpha(0.0);
         renderer.setSize(window.innerWidth, window.innerHeight);
-        document.body.appendChild(renderer.domElement);
+        var canvas = document.getElementById("mainCanvas");
+        canvas.appendChild(renderer.domElement);
 
         // CREATE MONUMENT
         var monument = new THREE.Group();
@@ -72,15 +104,88 @@
                     ringRadius * Math.sin((i / numCubes) * 2 * Math.PI));
             monument.add(cube);
         }
-        var monumentLat = 37.752486;
-        var monumentLon = -122.413657;
+        var monumentLat = 37.730425;
+        var monumentLon = -122.442796;
+
+        // CREATE A COMPASS
+        var loader = new THREE.FontLoader();
+        var blueMaterial = new THREE.MeshBasicMaterial({ color: 0x0000ff });
+        loader.load( 'fonts/gentilis_bold.typeface.json', function ( font ) {
+            var nGeo = new THREE.TextGeometry( 'N', {
+                font: font,
+                size: 12,
+                height: 1,
+                curveSegments: 12,
+                bevelEnabled: true,
+                bevelThickness: 1,
+                bevelSize: 1,
+                bevelSegments: 1
+            } );
+            var n = new THREE.Mesh(nGeo, blueMaterial);
+            n.position.set(0, 0, -50);
+            scene.add(n);
+
+            var eGeo = new THREE.TextGeometry( 'E', {
+                font: font,
+                size: 12,
+                height: 0.1,
+                curveSegments: 12,
+                bevelEnabled: true,
+                bevelThickness: 0.1,
+                bevelSize: 0.1,
+                bevelSegments: 1
+            } );
+            var e = new THREE.Mesh(eGeo, blueMaterial);
+            e.rotation.set(0, -Math.PI / 2, 0);
+            e.position.set(50, 0, 0);
+            scene.add(e);
+
+            var sGeo = new THREE.TextGeometry( 'S', {
+                font: font,
+                size: 12,
+                height: 0.1,
+                curveSegments: 12,
+                bevelEnabled: true,
+                bevelThickness: 0.1,
+                bevelSize: 0.1,
+                bevelSegments: 1
+            } );
+            var s = new THREE.Mesh(sGeo, blueMaterial);
+            s.rotation.set(0, Math.PI, 0);
+            s.position.set(0, 0, 50);
+            scene.add(s);
+
+            var wGeo = new THREE.TextGeometry( 'W', {
+                font: font,
+                size: 12,
+                height: 0.1,
+                curveSegments: 12,
+                bevelEnabled: true,
+                bevelThickness: 0.1,
+                bevelSize: 0.1,
+                bevelSegments: 1
+            } );
+            var w = new THREE.Mesh(wGeo, blueMaterial);
+            w.rotation.set(0, Math.PI / 2, 0);
+            w.position.set(-50, 0, 0);
+            scene.add(w);
+        } );
 
         // GET DEVICE ORIENTATION
-        var promise = new FULLTILT.getDeviceOrientation({ 'type': 'world' });
+        var orientationPromise = FULLTILT.getDeviceOrientation({ 'type': 'world' });
         var deviceOrientation;
-        promise
+        orientationPromise
             .then(function(controller) {
                 deviceOrientation = controller;
+            })
+            .catch(function(message) {
+                console.error(message);
+            });
+        var motionPromise = FULLTILT.getDeviceMotion();
+        var deviceMotion;
+        motionPromise
+            .then(function(controller) {
+                deviceMotion = controller;
             })
             .catch(function(message) {
                 console.error(message);
@@ -119,29 +224,87 @@
         };
         var wpid = navigator.geolocation.watchPosition(geo_success, geo_error, geo_options);
 
+        // GET CAMERA STREAM
+        var video = document.querySelector("#videoElement");
+        if (navigator.mediaDevices.getUserMedia) {
+            if (!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) {
+                console.log("enumerateDevices() not supported.");
+            }
+            else
+            {
+                var videoSource = null;
+                navigator.mediaDevices.enumerateDevices()
+                    .then(function(devices) {
+                        devices.forEach(function(device) {
+                            console.log(device.kind + ": " + device.label +
+                                        " id = " + device.deviceId);
+                            if (device.kind === 'videoinput')
+                            {
+                                // Assumes the back-facing camera is the last videoinput device
+                                videoSource = device.deviceId;
+                            }
+                        });
+                        if (videoSource !== null)
+                        {
+                            var constraints = {
+                                video: {
+                                    deviceId: videoSource
+                                }
+                            };
+                            navigator.mediaDevices.getUserMedia(constraints)
+                                .then(function(stream) {
+                                    handleVideo(stream);
+                                }).catch(function(err) {
+                                    videoError(err);
+                                });
+                        }
+                    })
+                    .catch(function(err) {
+                        console.log(err.name + ": " + err.message);
+                    });
+            }
+        }
+        function handleVideo(stream) {
+            video.src = window.URL.createObjectURL(stream);
+        }
+        function videoError(e) {
+            // do something
+        }
+
+        var camAngle = 0;
+        var camAngleIncrement = Math.PI / 200;
+
         // RUN RENDER LOOP
         var render = function () {
             requestAnimationFrame(render);
 
             // If we have a valid FULLTILT.DeviceOrientation object then use it
-            if (deviceOrientation) {
-                var quat = deviceOrientation.getScreenAdjustedQuaternion();
-                orientationQuat.set( quat.x, quat.y, quat.z, quat.w );
-                // IMPORTANT! set deviceorientation camera to three.js world frame
-                // (i.e. make camera look out the back of the screen by rotating the camera x-axis by -PI/2)
-                camera.quaternion.multiplyQuaternions( worldQuat, orientationQuat );
+            if (deviceMotion && deviceOrientation) {
+                var rotRate = deviceMotion.getScreenAdjustedRotationRate();
+                if (rotRate.alpha !== null) // Check if there's a gyro in the device
+                {
+                    var quat = deviceOrientation.getScreenAdjustedQuaternion();
+                    orientationQuat.set( quat.x, quat.y, quat.z, quat.w );
+                    // IMPORTANT! set deviceorientation camera to three.js world frame
+                    // (i.e. make camera look out the back of the screen by rotating the camera x-axis by -PI/2)
+                    camera.quaternion.multiplyQuaternions( worldQuat, orientationQuat );
+                }
             }
 
             var zPos = latitudeDifferenceMeters(deviceLat, monumentLat);
             var xPos = longitudeDifferenceMeters(deviceLat, deviceLon, monumentLon);
             monument.position.set(xPos, 0, -zPos);
 
+            // var camRadius = 20;
+            // camAngle += camAngleIncrement;
+            // camera2.position.set(camRadius * Math.cos(camAngle), 10, camRadius * Math.sin(camAngle));
+            // camera2.lookAt(new THREE.Vector3(0, 0, 0));
+
             renderer.render(scene, camera);
         };
 
         render();
     </script>
-    <div id="map"></div>
 </body>
 
 </html>
