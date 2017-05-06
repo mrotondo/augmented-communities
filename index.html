@@ -226,43 +226,41 @@
 
         // GET CAMERA STREAM
         var video = document.querySelector("#videoElement");
-        if (navigator.mediaDevices.getUserMedia) {
-            if (!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) {
-                console.log("enumerateDevices() not supported.");
-            }
-            else
-            {
-                var videoSource = null;
-                navigator.mediaDevices.enumerateDevices()
-                    .then(function(devices) {
-                        devices.forEach(function(device) {
-                            console.log(device.kind + ": " + device.label +
-                                        " id = " + device.deviceId);
-                            if (device.kind === 'videoinput')
-                            {
-                                // Assumes the back-facing camera is the last videoinput device
-                                videoSource = device.deviceId;
-                            }
-                        });
-                        if (videoSource !== null)
+        if (!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) {
+            console.log("enumerateDevices() not supported.");
+        }
+        else
+        {
+            var videoSource = null;
+            navigator.mediaDevices.enumerateDevices()
+                .then(function(devices) {
+                    devices.forEach(function(device) {
+                        console.log(device.kind + ": " + device.label +
+                                    " id = " + device.deviceId);
+                        if (device.kind === 'videoinput')
                         {
-                            var constraints = {
-                                video: {
-                                    deviceId: videoSource
-                                }
-                            };
-                            navigator.mediaDevices.getUserMedia(constraints)
-                                .then(function(stream) {
-                                    handleVideo(stream);
-                                }).catch(function(err) {
-                                    videoError(err);
-                                });
+                            // Assumes the back-facing camera is the last videoinput device
+                            videoSource = device.deviceId;
                         }
-                    })
-                    .catch(function(err) {
-                        console.log(err.name + ": " + err.message);
                     });
-            }
+                    if (videoSource !== null)
+                    {
+                        var constraints = {
+                            video: {
+                                deviceId: videoSource
+                            }
+                        };
+                        navigator.mediaDevices.getUserMedia(constraints)
+                            .then(function(stream) {
+                                handleVideo(stream);
+                            }).catch(function(err) {
+                                videoError(err);
+                            });
+                    }
+                })
+                .catch(function(err) {
+                    console.log(err.name + ": " + err.message);
+                });
         }
         function handleVideo(stream) {
             video.src = window.URL.createObjectURL(stream);
