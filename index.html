@@ -228,38 +228,20 @@
         var video = document.querySelector("#videoElement");
         if (!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) {
             console.log("enumerateDevices() not supported.");
+            video.remove();
         }
         else
         {
-            var videoSource = null;
-            navigator.mediaDevices.enumerateDevices()
-                .then(function(devices) {
-                    devices.forEach(function(device) {
-                        console.log(device.kind + ": " + device.label +
-                                    " id = " + device.deviceId);
-                        if (device.kind === 'videoinput')
-                        {
-                            // Assumes the back-facing camera is the last videoinput device
-                            videoSource = device.deviceId;
-                        }
-                    });
-                    if (videoSource !== null)
-                    {
-                        var constraints = {
-                            video: {
-                                deviceId: videoSource
-                            }
-                        };
-                        navigator.mediaDevices.getUserMedia(constraints)
-                            .then(function(stream) {
-                                handleVideo(stream);
-                            }).catch(function(err) {
-                                videoError(err);
-                            });
-                    }
-                })
-                .catch(function(err) {
-                    console.log(err.name + ": " + err.message);
+            var constraints = {
+                video: {
+                    facingMode: "environment"
+                }
+            };
+            navigator.mediaDevices.getUserMedia(constraints)
+                .then(function(stream) {
+                    handleVideo(stream);
+                }).catch(function(err) {
+                    videoError(err);
                 });
         }
         function handleVideo(stream) {
