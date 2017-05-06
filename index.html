@@ -2,7 +2,7 @@
 <html>
 
 <head>
-    <title>My first three.js app</title>
+    <title>Augmented Communities Starter</title>
     <style>
         body {
             margin: 0;
@@ -83,29 +83,63 @@
         var canvas = document.getElementById("mainCanvas");
         canvas.appendChild(renderer.domElement);
 
-        // CREATE MONUMENT
-        var monument = new THREE.Group();
-        scene.add(monument);
-        var geometry = new THREE.BoxGeometry(1, 1, 1);
-        var greenMaterial = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
-        var redMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000 });
-        var ringRadius = 5;
-        var numCubes = 30;
-        for (var i = 0; i < numCubes; i++)
-        {
-            var cube = new THREE.Mesh(geometry, greenMaterial);
-            if (i == 0)
-            {
-                cube.material = redMaterial;
+        class Monument {
+            constructor (latitude, longitude, altitude, scene, init, update) {
+                this.latitude = latitude;
+                this.longitude = longitude;
+                this.altitude = altitude;
+                this.update = update.bind(this); // Called each frame
+
+                this.object3D = init.bind(this)();
+                scene.add(this.object3D);
             }
-            cube.position.set(
-                    ringRadius * Math.cos((i / numCubes) * 2 * Math.PI),
-                    0,
-                    ringRadius * Math.sin((i / numCubes) * 2 * Math.PI));
-            monument.add(cube);
+
+            get lat() {
+                return this.latitude;
+            }
+
+            get lon() {
+                return this.longitude;
+            }
+
+            updatePositionRelativeToReferenceLatLon(referenceLat, referenceLon) {
+                var zPos = latitudeDifferenceMeters(referenceLat, this.latitude);
+                var xPos = longitudeDifferenceMeters(referenceLat, referenceLon, this.longitude);
+                this.object3D.position.set(xPos, this.altitude, -zPos);
+            }
         }
-        var monumentLat = 37.730425;
-        var monumentLon = -122.442796;
+
+        // CREATE MONUMENT
+        var testMonument = new Monument(
+             37.730425,
+             -122.442796,
+             0,
+             scene,
+             function() {
+                var group = new THREE.Group();
+                var geometry = new THREE.BoxGeometry(1, 1, 1);
+                var greenMaterial = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
+                var redMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+                var ringRadius = 5;
+                var numCubes = 30;
+                for (var i = 0; i < numCubes; i++)
+                {
+                    var cube = new THREE.Mesh(geometry, greenMaterial);
+                    if (i == 0)
+                    {
+                        cube.material = redMaterial;
+                    }
+                    cube.position.set(
+                            ringRadius * Math.cos((i / numCubes) * 2 * Math.PI),
+                            0,
+                            ringRadius * Math.sin((i / numCubes) * 2 * Math.PI));
+                    group.add(cube);
+                }
+                return group;
+             },
+             function() {
+             }
+        )
 
         // CREATE A COMPASS
         var loader = new THREE.FontLoader();
@@ -208,7 +242,7 @@
             }
             var img = new Image();
             var api_key = "AIzaSyCadLo8pPkhDABBMIM6dJjySG3QX9BYClE";
-            img.src = "https://maps.googleapis.com/maps/api/staticmap?center=" + deviceLat + "," + deviceLon + "&zoom=19&size=300x300&sensor=false&markers=size:tiny%7Ccolor:red%7C"+deviceLat+","+deviceLon+"&markers=size:tiny%7Ccolor:blue%7C"+monumentLat+","+monumentLon+"&key=" + api_key;
+            img.src = "https://maps.googleapis.com/maps/api/staticmap?center=" + deviceLat + "," + deviceLon + "&zoom=19&size=300x300&sensor=false&markers=size:tiny%7Ccolor:red%7C"+deviceLat+","+deviceLon+"&markers=size:tiny%7Ccolor:blue%7C"+testMonument.lat+","+testMonument.lon+"&key=" + api_key;
             map.appendChild(img);
         }
         function geo_error() {
@@ -253,7 +287,6 @@
 
         var camAngle = 0;
         var camAngleIncrement = Math.PI / 200;
-
         // RUN RENDER LOOP
         var render = function () {
             requestAnimationFrame(render);
@@ -271,9 +304,8 @@
                 }
             }
 
-            var zPos = latitudeDifferenceMeters(deviceLat, monumentLat);
-            var xPos = longitudeDifferenceMeters(deviceLat, deviceLon, monumentLon);
-            monument.position.set(xPos, 0, -zPos);
+            testMonument.update(testMonument);
+            testMonument.updatePositionRelativeToReferenceLatLon(deviceLat, deviceLon);
 
             // var camRadius = 20;
             // camAngle += camAngleIncrement;
