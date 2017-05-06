@@ -932,9 +932,9 @@ FULLTILT.DeviceOrientation = function (options) {
 	this.options = options || {}; // by default use UA deviceorientation 'type' ("game" on iOS, "world" on Android)
 
 	var tries = 0;
-	var maxTries = 1000;
+	var maxTries = 200;
 	var successCount = 0;
-	var successThreshold = 1000;
+	var successThreshold = 10;
 
 	this.alphaOffsetScreen = 0;
 	this.alphaOffsetDevice = undefined;
