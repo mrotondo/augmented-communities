@@ -53,7 +53,14 @@
     <script src="js/three.js"></script>
     <script src="js/fulltilt.js"></script>
 
-    <!--chunks-->
+    <!--loaders-->
+    <script src="js/ColladaLoader.js"></script>
+    <script src="js/FBXLoader.js"></script>
+    <script src="js/MTLLoader.js"></script>
+    <script src="js/OBJLoader.js"></script>
+    <script src="js/STLLoader.js"></script>
+
+    <!--workshop chunks-->
     <script src="js/monument.js"></script>
     <script src="js/compass.js"></script>
 
@@ -79,12 +86,19 @@
         var scene = new THREE.Scene();
         var ARCam = new THREE.PerspectiveCamera(63, window.innerWidth / window.innerHeight, 0.1, 1000);
         ARCam.position.set(0, 1.7, 0);
-        
         var helper = new THREE.CameraHelper(ARCam);
         scene.add(helper);
 
         var devCam = new THREE.PerspectiveCamera(63, window.innerWidth / window.innerHeight, 0.1, 1000);
         devCam.position.set(0, 0, 0);
+
+        var ambientLight = new THREE.AmbientLight( 0x606060 ); // soft white light
+        scene.add( ambientLight );
+
+        // White directional light at half intensity shining from the top.
+        var directionalLight = new THREE.DirectionalLight( 0xffffff, 0.5 );
+        directionalLight.position.set(10, 10, 10);
+        scene.add( directionalLight );
 
         var renderer = new THREE.WebGLRenderer({ alpha: true });
         renderer.setClearAlpha(0.0);
@@ -175,7 +189,7 @@
 
         // RUN RENDER LOOP
         var devCamAngle = 0;
-        var devCamHeight = 1.7;
+        var devCamHeight = 10;
         var devCamAngleIncrement = Math.PI / 200;
         var orientationQuat = new THREE.Quaternion();
         // World frame transform (- PI/2 around the x-axis)
@@ -210,6 +224,7 @@
             var devCamRadius = 20;
             devCamAngle += devCamAngleIncrement;
             devCam.position.set(devCamRadius * Math.cos(devCamAngle), 10, devCamRadius * Math.sin(devCamAngle));
+            // devCam.position.set(0, devCamHeight, -devCamRadius);
             devCam.position.add(monument.monumentGroup.position);
             devCam.lookAt(monument.monumentGroup.position);
 
