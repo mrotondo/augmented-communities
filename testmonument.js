@@ -1,6 +1,6 @@
 function CreateTestMonument() {
     var testMonument = new Monument(
-        37.730734, -122.442040,
+        37.730414, -122.442797,
         0,
         Math.PI / 2,
         function (group) {
@@ -8,7 +8,7 @@ function CreateTestMonument() {
                 var ringRadius = 5;
                 for (var i = 0; i < this.clones.length; i++) {
                     var baseAngle = (i / this.clones.length) * 2 * Math.PI;
-                    var angle = baseAngle + this.angleOffset;
+                    var angle = baseAngle + angleOffset;
                     var clone = this.clones[i];
                     clone.position.set(
                         ringRadius * Math.cos(angle),
@@ -18,21 +18,7 @@ function CreateTestMonument() {
                 }
             }
 
-            this.finishInitialization = function (group) {
-                var geometry = new THREE.BoxGeometry(1, 1, 1);
-                var greenMaterial = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
-                var redMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000 });
-                var numClones = 20;
-
-                this.clones = []
-                this.angleOffset = 0;
-                for (var i = 0; i < numClones; i++) {
-                    var clone = this.protoObject.clone();
-                    this.clones.push(clone);
-                    group.add(clone);
-                }
-                this.positionClones(this.angleOffset);
-            }
+            this.fakeTime = 0;
 
             var onProgress = function (xhr) {
                 if (xhr.lengthComputable) {
@@ -52,8 +38,15 @@ function CreateTestMonument() {
                 objLoader.setPath('models/horse/');
                 objLoader.load('horse-obj.obj', function (object) {
                     object.scale.set(0.03, 0.03, 0.03);
-                    this.protoObject = object;
-                    this.finishInitialization(group);
+                
+                    var numClones = 20;
+                    this.clones = []
+                    for (var i = 0; i < numClones; i++) {
+                        var clone = object.clone();
+                        this.clones.push(clone);
+                        group.add(clone);
+                    }
+                    this.positionClones(this.angleOffset);
                 }.bind(this), onProgress, onError);
             }.bind(this));
 
@@ -65,21 +58,43 @@ function CreateTestMonument() {
                 archObjLoader.setMaterials(materials);
                 archObjLoader.setPath('models/arch-obj/');
                 archObjLoader.load('tinker.obj', function (object) {
-                    object.scale.set(0.3, 0.3, 0.3);
+                    object.scale.set(0.2, 0.2, 0.2);
                     object.rotation.set(-Math.PI / 2, 0, 0);
                     group.add(object);
 
                     var clone = object.clone();
                     clone.rotateZ(Math.PI / 2);
                     group.add(clone);
+
+                    var clone2 = object.clone();
+                    clone2.rotateZ(Math.PI / 4);
+                    group.add(clone2);
+
+                    var clone3 = object.clone();
+                    clone3.rotateZ(-Math.PI / 4);
+                    group.add(clone3);
                 }.bind(this), onProgress, onError);
             }.bind(this));
 
+            var trainLoader = new THREE.ColladaLoader();
+            trainLoader.options.convertUpAxis = true;
+            trainLoader.load( 'models/train.dae', function ( collada ) {
+                var object = collada.scene;
+                object.scale.set(0.5, 0.5, 0.5);
+                object.rotateZ(Math.PI / 2);
+                this.centralObject = object;
+                group.add( object );
+            }.bind(this) );
+
         },
         function () {
+            this.fakeTime += 0.01;
             if (this.clones !== undefined) {
-                this.angleOffset += 0.01;
-                this.positionClones(this.angleOffset)
+                this.positionClones(this.fakeTime)
+            }
+            if (this.centralObject !== undefined)
+            {
+                this.centralObject.position.set(0, (Math.sin(this.fakeTime * 2) + 1) * 2, 0);
             }
         });
     return testMonument;
