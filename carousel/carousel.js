@@ -1,6 +1,6 @@
 function CreateCarousel() {
     var testMonument = new Monument(
-        37.730414, -122.442797,
+        37.754426, -122.418190,
         0,
         Math.PI / 2,
         function (group) {

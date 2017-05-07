@@ -189,7 +189,7 @@
 
         // RUN RENDER LOOP
         var devCamAngle = 0;
-        var devCamHeight = 10;
+        var devCamHeight = 1.7;
         var devCamAngleIncrement = Math.PI / 200;
         var orientationQuat = new THREE.Quaternion();
         // World frame transform (- PI/2 around the x-axis)
@@ -223,7 +223,7 @@
 
             var devCamRadius = 20;
             devCamAngle += devCamAngleIncrement;
-            devCam.position.set(devCamRadius * Math.cos(devCamAngle), 10, devCamRadius * Math.sin(devCamAngle));
+            devCam.position.set(devCamRadius * Math.cos(devCamAngle), devCamHeight, devCamRadius * Math.sin(devCamAngle));
             // devCam.position.set(0, devCamHeight, -devCamRadius);
             devCam.position.add(monument.monumentGroup.position);
             devCam.lookAt(monument.monumentGroup.position);
