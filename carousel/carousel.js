@@ -86,6 +86,21 @@ function CreateCarousel() {
                 group.add( object );
             }.bind(this) );
 
+            var ringsSceneLoader = new THREE.ObjectLoader();
+            ringsSceneLoader.load(
+                '/augmented-communities/models/rings-scene.json',
+                function (obj) {
+                    obj.position.set(0, 12, 0);
+                    group.add( obj );
+                },
+                function ( xhr ) {
+                    console.log( (xhr.loaded / xhr.total * 100) + '% loaded' );
+                },
+                function ( xhr ) {
+                    console.error( 'An error happened' );
+                }
+            );
+
         },
         function () {
             this.fakeTime += 0.01;
