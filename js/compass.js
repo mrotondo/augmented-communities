@@ -1,7 +1,7 @@
 function AddCompass(scene) {
     var loader = new THREE.FontLoader();
     var blueMaterial = new THREE.MeshBasicMaterial({ color: 0x0000ff });
-    loader.load( 'fonts/gentilis_bold.typeface.json', function ( font ) {
+    loader.load('/fonts/gentilis_bold.typeface.json', function (font) {
         var nGeo = new THREE.TextGeometry( 'N', {
             font: font,
             size: 12,

@@ -1,4 +1,4 @@
-function CreateTestMonument() {
+function CreateCarousel() {
     var testMonument = new Monument(
         37.730414, -122.442797,
         0,
@@ -30,12 +30,12 @@ function CreateTestMonument() {
                 console.log("error loading mtl!");
             };
             var mtlLoader = new THREE.MTLLoader();
-            mtlLoader.setPath('models/horse/');
+            mtlLoader.setPath('/models/horse/');
             mtlLoader.load('horse-obj.mtl', function (materials) {
                 materials.preload();
                 var objLoader = new THREE.OBJLoader();
                 objLoader.setMaterials(materials);
-                objLoader.setPath('models/horse/');
+                objLoader.setPath('/models/horse/');
                 objLoader.load('horse-obj.obj', function (object) {
                     object.scale.set(0.03, 0.03, 0.03);
                 
@@ -51,12 +51,12 @@ function CreateTestMonument() {
             }.bind(this));
 
             var archMtlLoader = new THREE.MTLLoader();
-            archMtlLoader.setPath('models/arch-obj/');
+            archMtlLoader.setPath('/models/arch-obj/');
             archMtlLoader.load('obj.mtl', function (materials) {
                 materials.preload();
                 var archObjLoader = new THREE.OBJLoader();
                 archObjLoader.setMaterials(materials);
-                archObjLoader.setPath('models/arch-obj/');
+                archObjLoader.setPath('/models/arch-obj/');
                 archObjLoader.load('tinker.obj', function (object) {
                     object.scale.set(0.2, 0.2, 0.2);
                     object.rotation.set(-Math.PI / 2, 0, 0);
@@ -78,7 +78,7 @@ function CreateTestMonument() {
 
             var trainLoader = new THREE.ColladaLoader();
             trainLoader.options.convertUpAxis = true;
-            trainLoader.load( 'models/train.dae', function ( collada ) {
+            trainLoader.load( '/models/train.dae', function ( collada ) {
                 var object = collada.scene;
                 object.scale.set(0.5, 0.5, 0.5);
                 object.rotateZ(Math.PI / 2);
