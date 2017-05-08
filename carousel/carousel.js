@@ -1,6 +1,6 @@
 function CreateCarousel() {
     var testMonument = new Monument(
-        37.754426, -122.418190,
+        37.752409, -122.418262,
         0,
         Math.PI / 2,
         function (group) {
@@ -38,15 +38,7 @@ function CreateCarousel() {
                 objLoader.setPath('/augmented-communities/models/horse/');
                 objLoader.load('horse-obj.obj', function (object) {
                     object.scale.set(0.03, 0.03, 0.03);
-                
-                    var numClones = 20;
-                    this.clones = []
-                    for (var i = 0; i < numClones; i++) {
-                        var clone = object.clone();
-                        this.clones.push(clone);
-                        group.add(clone);
-                    }
-                    this.positionClones(this.angleOffset);
+                    group.add(object);
                 }.bind(this), onProgress, onError);
             }.bind(this));
 
