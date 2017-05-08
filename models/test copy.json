@@ -1,0 +1,50 @@
+{
+	"metadata": {
+		"version": 4.5,
+		"type": "Object",
+		"generator": "Object3D.toJSON"
+	},
+	"geometries": [
+		{
+			"uuid": "6C04447D-8088-40F2-ABEB-EBE13DD5DFBE",
+			"type": "TorusKnotBufferGeometry",
+			"radius": 2,
+			"tube": 0.8,
+			"tubularSegments": 64,
+			"radialSegments": 12,
+			"p": 2,
+			"q": 3
+		}],
+	"materials": [
+		{
+			"uuid": "BBA162C6-6803-4678-A2D5-DD8A9A9D6582",
+			"type": "ShaderMaterial",
+			"opacity": 0,
+			"transparent": true,
+			"depthFunc": 3,
+			"depthTest": true,
+			"depthWrite": true,
+			"skinning": false,
+			"morphTargets": false,
+			"dithering": false,
+			"uniforms": {},
+			"vertexShader": "void main() {\n\tgl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );\n}",
+			"fragmentShader": "void main() {\n\tgl_FragColor = vec4( 1.0, 0.0, 0.0, 1.0 );\n}"
+		}],
+	"object": {
+		"uuid": "4AD93053-7F12-45D8-992A-BE44D6CEF450",
+		"type": "Scene",
+		"name": "Scene",
+		"matrix": [1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1],
+		"children": [
+			{
+				"uuid": "AE5FBAE9-BE4B-4E48-9220-CC5BFE08068A",
+				"type": "Mesh",
+				"name": "TorusKnot 1",
+				"matrix": [1,0,0,0,0,1.159027,0,0,0,0,1,0,0,4.090861,0,1],
+				"geometry": "6C04447D-8088-40F2-ABEB-EBE13DD5DFBE",
+				"material": "BBA162C6-6803-4678-A2D5-DD8A9A9D6582"
+			}],
+		"background": 11184810
+	}
+}
