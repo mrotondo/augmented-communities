@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Augmented Communities Starter</title>
+    <style>
+        body {
+            margin: 0;
+        }
+        
+        canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        #map {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            width: 300px;
+            height: 300px;
+        }
+
+        .parent {
+            width: 100%;
+            height: 100%;
+        }
+        #monitor, #mainCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+        #videoElement {
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="parent">
+        <div id="monitor">
+            <video autoplay="true" id="videoElement"></video>
+        </div>
+        <div id="mainCanvas"></div>
+        <div id="map"></div>
+    </div>
+
+    <!--libs-->
+    <script src="/augmented-communities/js/three.js"></script>
+    <script src="/augmented-communities/js/fulltilt.js"></script>
+
+    <!--loaders-->
+    <script src="/augmented-communities/js/ColladaLoader.js"></script>
+    <script src="/augmented-communities/js/FBXLoader.js"></script>
+    <script src="/augmented-communities/js/MTLLoader.js"></script>
+    <script src="/augmented-communities/js/OBJLoader.js"></script>
+    <script src="/augmented-communities/js/STLLoader.js"></script>
+
+    <!--workshop chunks-->
+    <script src="/augmented-communities/js/monument.js"></script>
+    <script src="/augmented-communities/js/compass.js"></script>
+
+    <!--monuments-->
+    <script src="carousel.js"></script>
+    <script>
+
+        // Thanks https://en.wikipedia.org/wiki/Geographic_coordinate_system#Expressing_latitude_and_longitude_as_linear_units
+        function latitudeDifferenceMeters(referenceLat, measurementLat)
+        {
+            var metersPerLatDegree = 111132.92 - 559.82 * Math.cos(2 * referenceLat) + 1.175 * Math.cos(4 * referenceLat) - 0.0023 * Math.cos(6 * referenceLat);
+            var degreeDifference = measurementLat - referenceLat;
+            return degreeDifference * metersPerLatDegree;
+        }
+        function longitudeDifferenceMeters(referenceLat, longA, longB)
+        {
+            var metersPerLongDegree = 111412.84 * Math.cos(referenceLat) - 93.5 * Math.cos(3 * referenceLat) + 0.118 * Math.cos(5 * referenceLat);
+            var degreeDifference = longB - longA;
+            return degreeDifference * metersPerLongDegree;
+        }
+
+        // CREATE THREE.JS SCENE
+        var scene = new THREE.Scene();
+        var ARCam = new THREE.PerspectiveCamera(63, window.innerWidth / window.innerHeight, 0.1, 1000);
+        ARCam.position.set(0, 1.7, 0);
+        var helper = new THREE.CameraHelper(ARCam);
+        scene.add(helper);
+
+        var devCam = new THREE.PerspectiveCamera(63, window.innerWidth / window.innerHeight, 0.1, 1000);
+        devCam.position.set(0, 0, 0);
+
+        var ambientLight = new THREE.AmbientLight( 0x606060 ); // soft white light
+        scene.add( ambientLight );
+
+        // White directional light at half intensity shining from the top.
+        var directionalLight = new THREE.DirectionalLight( 0xffffff, 0.5 );
+        directionalLight.position.set(10, 10, 10);
+        scene.add( directionalLight );
+
+        var renderer = new THREE.WebGLRenderer({ alpha: true });
+        renderer.setClearAlpha(0.0);
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        var canvas = document.getElementById("mainCanvas");
+        canvas.appendChild(renderer.domElement);
+
+        AddCompass(scene);
+        var monument = CreateCarousel();
+        monument.initialize(scene);
+
+        // GET DEVICE ORIENTATION
+        var orientationPromise = FULLTILT.getDeviceOrientation({ 'type': 'world' });
+        var deviceOrientation;
+        orientationPromise
+            .then(function(controller) {
+                deviceOrientation = controller;
+            })
+            .catch(function(message) {
+                console.error(message);
+            });
+        var motionPromise = FULLTILT.getDeviceMotion();
+        var deviceMotion;
+        motionPromise
+            .then(function(controller) {
+                deviceMotion = controller;
+            })
+            .catch(function(message) {
+                console.error(message);
+            });
+
+        // GET DEVICE POSITION
+        var deviceLat = 0;
+        var deviceLon = 0;
+        function geo_success(position) {
+            deviceLat = +position.coords.latitude;
+            deviceLon = +position.coords.longitude
+
+            var map = document.getElementById("map");
+            while (map.firstChild) {
+                map.removeChild(map.firstChild);
+            }
+            var img = new Image();
+            var api_key = "AIzaSyCadLo8pPkhDABBMIM6dJjySG3QX9BYClE";
+            img.src = "https://maps.googleapis.com/maps/api/staticmap?center=" + deviceLat + "," + deviceLon + "&zoom=19&size=300x300&sensor=false&markers=size:tiny%7Ccolor:red%7C"+deviceLat+","+deviceLon+"&markers=size:tiny%7Ccolor:blue%7C"+monument.latitude+","+monument.longitude+"&key=" + api_key;
+            map.appendChild(img);
+        }
+        function geo_error() {
+            console.log("Sorry, no position available.");
+            // GPS not available, so hardcode the coords of the Grand Theater!
+            deviceLat = 37.7545505;
+            deviceLon = -122.4184645;
+        }
+        var geo_options = {
+            enableHighAccuracy: true,
+            maximumAge        : 30000,
+            timeout           : 27000
+        };
+        var wpid = navigator.geolocation.watchPosition(geo_success, geo_error, geo_options);
+
+        // GET CAMERA STREAM
+        var video = document.querySelector("#videoElement");
+        if (!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) {
+            console.log("enumerateDevices() not supported.");
+            video.remove();
+        }
+        else
+        {
+            var constraints = {
+                video: {
+                    // Get rear camera on phones/tablets
+                    facingMode: "environment"
+                }
+            };
+            navigator.mediaDevices.getUserMedia(constraints)
+                .then(function(stream) {
+                    handleVideo(stream);
+                }).catch(function(err) {
+                    videoError(err);
+                });
+        }
+        function handleVideo(stream) {
+            video.src = window.URL.createObjectURL(stream);
+        }
+        function videoError(e) {
+            console.log("Failed to handle video! " + e);
+        }
+
+        // RUN RENDER LOOP
+        var devCamAngle = 0;
+        var devCamHeight = 1.7;
+        var devCamAngleIncrement = Math.PI / 200;
+        var orientationQuat = new THREE.Quaternion();
+        // World frame transform (- PI/2 around the x-axis)
+        var worldQuat = new THREE.Quaternion( - Math.sqrt( 0.5 ), 0, 0, Math.sqrt( 0.5 ) );
+        var render = function () {
+            requestAnimationFrame(render);
+
+            var gyroPresent = false;
+
+            // If we have a valid FULLTILT.DeviceOrientation object then use it
+            if (deviceMotion && deviceOrientation) {
+                var rotRate = deviceMotion.getScreenAdjustedRotationRate();
+                if (rotRate.alpha !== null) // Check if there's a gyro in the device
+                {
+                    gyroPresent = true;
+                    var quat = deviceOrientation.getScreenAdjustedQuaternion();
+                    orientationQuat.set( quat.x, quat.y, quat.z, quat.w );
+                    // IMPORTANT! set deviceorientation camera to three.js world frame
+                    // (i.e. make camera look out the back of the screen by rotating the camera x-axis by -PI/2)
+                    ARCam.quaternion.multiplyQuaternions( worldQuat, orientationQuat );
+                }
+            }
+
+            if (gyroPresent)
+            {
+                scene.remove(helper);
+            }
+
+            monument.update();
+            monument.updatePositionRelativeToReferenceLatLon(deviceLat, deviceLon);
+
+            var devCamRadius = 20;
+            devCamAngle += devCamAngleIncrement;
+            devCam.position.set(devCamRadius * Math.cos(devCamAngle), devCamHeight, devCamRadius * Math.sin(devCamAngle));
+            // devCam.position.set(0, devCamHeight, -devCamRadius);
+            devCam.position.add(monument.monumentGroup.position);
+            devCam.lookAt(monument.monumentGroup.position);
+
+            var cam = gyroPresent ? ARCam : devCam;
+
+            renderer.render(scene, cam);
+        };
+
+        render();
+    </script>
+</body>
+
+</html>
