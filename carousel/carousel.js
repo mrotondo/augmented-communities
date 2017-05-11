@@ -38,7 +38,14 @@ function CreateCarousel() {
                 objLoader.setPath('/augmented-communities/models/horse/');
                 objLoader.load('horse-obj.obj', function (object) {
                     object.scale.set(0.03, 0.03, 0.03);
-                    group.add(object);
+                    var numClones = 20;
+                    this.clones = []
+                    for (var i = 0; i < numClones; i++) {
+                        var clone = object.clone();
+                        this.clones.push(clone);
+                        group.add(clone);
+                    }
+                    this.positionClones(this.angleOffset);
                 }.bind(this), onProgress, onError);
             }.bind(this));
 
