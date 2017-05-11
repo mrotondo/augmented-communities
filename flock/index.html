@@ -70,21 +70,6 @@
     <!--monuments-->
     <script src="flock.js"></script>
     <script>
-
-        // Thanks https://en.wikipedia.org/wiki/Geographic_coordinate_system#Expressing_latitude_and_longitude_as_linear_units
-        function latitudeDifferenceMeters(referenceLat, measurementLat)
-        {
-            var metersPerLatDegree = 111132.92 - 559.82 * Math.cos(2 * referenceLat) + 1.175 * Math.cos(4 * referenceLat) - 0.0023 * Math.cos(6 * referenceLat);
-            var degreeDifference = measurementLat - referenceLat;
-            return degreeDifference * metersPerLatDegree;
-        }
-        function longitudeDifferenceMeters(referenceLat, longA, longB)
-        {
-            var metersPerLongDegree = 111412.84 * Math.cos(referenceLat) - 93.5 * Math.cos(3 * referenceLat) + 0.118 * Math.cos(5 * referenceLat);
-            var degreeDifference = longB - longA;
-            return degreeDifference * metersPerLongDegree;
-        }
-
         // CREATE THREE.JS SCENE
         var scene = new THREE.Scene();
         var ARCam = new THREE.PerspectiveCamera(63, window.innerWidth / window.innerHeight, 0.1, 1000);
