@@ -1,4 +1,4 @@
-function CreateCarousel() {
+function CreateMonument() {
     var testMonument = new Monument(
         37.7556042, -122.41901,
         // 37.754426, -122.418190,
