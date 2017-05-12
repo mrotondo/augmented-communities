@@ -5,16 +5,50 @@
             p {
                 font-size: 2em;
             }
+
+            .map {
+                width: 300px;
+                height: 300px;
+            }
         </style>
     </head>
     <body>
         <p>Roto - <a href="carousel/index.html">Carousel</a></p>
+        <div class="map" id="rotoMap"></div>
         <p>Pat - <a href="luvasl/index.html">luvasl</a></p>
+        <div class="map" id="luvaslMap"></div>
         <p>Les - <a href="lesstuck/index.html">Grande Coffee</a></p>
+        <div class="map" id="lesMap"></div>
         <p>Don & Tiare - <a href="mission-market/index.html">Mission Market</a></p>
+        <div class="map" id="tiareDonMap"></div>
         <p>Jess - <a href="carousel-jess/index.html">Spherez</a></p>
+        <div class="map" id="jessMap"></div>
         <p>Victoria - <a href="carousel-victoria/index.html">Owl</a></p>
+        <div class="map" id="victoriaMap"></div>
         <p>Colin - <a href="asdf/index.html">Shiny Statues</a></p>
+        <div class="map" id="colinMap"></div>
         <p>Changbai - <a href="flock/index.html">BART Boids</a></p>
+        <div class="map" id="changbaiMap"></div>
+
+        <script>
+            function generateMap(parentDomElementID, lat, lon) {
+                var img = new Image();
+                var api_key = "AIzaSyCadLo8pPkhDABBMIM6dJjySG3QX9BYClE";
+                img.src = "https://maps.googleapis.com/maps/api/staticmap?center=" + lat + "," + lon + "&zoom=18&size=300x300&sensor=false&markers=size:tiny%7Ccolor:red%7C"+lat+","+lon+"&key=" + api_key;
+                
+                var parent = document.getElementById(parentDomElementID);
+                parent.appendChild(img);
+            }
+
+            generateMap("rotoMap", 37.752409, -122.418262);
+            generateMap("luvaslMap", 37.752216, -122.417725);
+            generateMap("lesMap", 37.754502, -122.418595);
+            generateMap("tiareDonMap", 37.7556042, -122.41901);
+            generateMap("jessMap", 37.754426, -122.418190);
+            generateMap("victoriaMap", 37.752529, -122.418470);
+            generateMap("colinMap", 37.752563, -122.418222);
+            generateMap("changbaiMap", 37.752020, -122.418726);
+
+        </script>
     </body>
 </html>
