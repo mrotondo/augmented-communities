@@ -11,6 +11,16 @@
                 height: 300px;
             }
         </style>
+        <script>
+            function generateMap(parentDomElementID, lat, lon) {
+                var img = new Image();
+                var api_key = "AIzaSyCadLo8pPkhDABBMIM6dJjySG3QX9BYClE";
+                img.src = "https://maps.googleapis.com/maps/api/staticmap?center=" + lat + "," + lon + "&zoom=18&size=300x300&sensor=false&markers=size:tiny%7Ccolor:red%7C"+lat+","+lon+"&key=" + api_key;
+                
+                var parent = document.getElementById(parentDomElementID);
+                parent.appendChild(img);
+            }
+        </script>
     </head>
     <body>
         <p>Roto - <a href="carousel/index.html">Carousel</a></p>
@@ -31,15 +41,6 @@
         <div class="map" id="changbaiMap"></div>
 
         <script>
-            function generateMap(parentDomElementID, lat, lon) {
-                var img = new Image();
-                var api_key = "AIzaSyCadLo8pPkhDABBMIM6dJjySG3QX9BYClE";
-                img.src = "https://maps.googleapis.com/maps/api/staticmap?center=" + lat + "," + lon + "&zoom=18&size=300x300&sensor=false&markers=size:tiny%7Ccolor:red%7C"+lat+","+lon+"&key=" + api_key;
-                
-                var parent = document.getElementById(parentDomElementID);
-                parent.appendChild(img);
-            }
-
             generateMap("rotoMap", 37.752409, -122.418262);
             generateMap("luvaslMap", 37.752216, -122.417725);
             generateMap("lesMap", 37.754502, -122.418595);
@@ -48,7 +49,6 @@
             generateMap("victoriaMap", 37.752529, -122.418470);
             generateMap("colinMap", 37.752563, -122.418222);
             generateMap("changbaiMap", 37.752020, -122.418726);
-
         </script>
     </body>
 </html>
