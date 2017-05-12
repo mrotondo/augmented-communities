@@ -54,9 +54,9 @@ function CreateMonument() {
             var ringsSceneLoader = new THREE.ObjectLoader();
             ringsSceneLoader.load(
                 '/augmented-communities/models/rings-scene.json',
-                function (obj) {
-                    obj.position.set(0, 1.5, 0);
-                    group.add( obj );
+                function (object) {
+                    object.position.set(0, 1.5, 0);
+                    group.add( object );
                 },
                 function ( xhr ) {
                     console.log( (xhr.loaded / xhr.total * 100) + '% loaded' );
